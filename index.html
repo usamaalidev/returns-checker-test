@@ -73,8 +73,8 @@ textarea{width:100%;font:14px/1.5 var(--mono);direction:ltr;text-align:left;colo
 #lapReader:empty{display:none}
 #cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
 #cam video{display:block;width:100%;height:auto}
-#frame{position:absolute;left:8%;width:84%;top:45%;height:10%;border:3px solid #fff;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);transition:border-color .2s}
-#frame.hit{border-color:#3ddc84}
+#frame{position:absolute;left:5%;width:90%;top:22%;height:46%;border:3px solid #fff;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);transition:border-color .2s,background .2s}
+#frame.hit{border-color:#3ddc84;background:rgba(61,220,132,.2)}
 .camhint{position:absolute;top:10px;left:0;right:0;text-align:center;color:#fff;font-size:14px;margin:0}
 
 /* last scan result */
@@ -166,7 +166,7 @@ li button.on{background:var(--red-bg);color:var(--red);border-color:var(--red)}
     <div class="head"><h2>الاسكان</h2><button class="link" id="typeBtn" type="button">اكتب رقم</button></div>
     <div class="seg" role="tablist">
       <button type="button" role="tab" data-tab="lap"><b>سكانر لاب</b><small>باركود / QR</small></button>
-      <button type="button" role="tab" data-tab="phone"><b>سكانر فون</b><small>الرقم المكتوب</small></button>
+      <button type="button" role="tab" data-tab="phone"><b>سكانر فون</b><small>رقم JEG</small></button>
     </div>
 
     <div id="paneLap" class="pane" hidden>
@@ -186,8 +186,8 @@ li button.on{background:var(--red-bg);color:var(--red);border-color:var(--red)}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         <span>افتح الكاميرا</span>
       </button>
-      <div id="cam" hidden><video id="video" playsinline muted></video><div id="frame"></div><p class="camhint">خلي رقم JEG جوه المستطيل</p></div>
-      <label class="btn ghost">صوّر صورة للرقم<input type="file" id="photo" accept="image/*" capture="environment" multiple></label>
+      <div id="cam" hidden><video id="video" playsinline muted></video><div id="frame"></div><p class="camhint">خلي رقم JEG في أي حتة جوه المستطيل</p></div>
+      <label class="btn ghost">صوّر البوليصة<input type="file" id="photo" accept="image/*" capture="environment" multiple></label>
     </div>
 
     <div class="row" id="typeRow" hidden>
@@ -343,72 +343,123 @@ $('#pasteBtn').addEventListener('click',function(){
 $('#donePaper').addEventListener('click',function(){paperOpen=false;render();$('#scanCard').scrollIntoView({behavior:'smooth'})});
 $('#editPaper').addEventListener('click',function(){paperOpen=true;render();paper.focus()});
 
-// ---- scanner phone: reads the printed JEG number (OCR) ----
+var detector=null;if('BarcodeDetector' in window){try{detector=new BarcodeDetector()}catch(e){}}
+// ---- scanner phone: photograph the whole waybill ----
+// 1) reads the JEG barcode anywhere in the picture (fast, checksum-verified; other barcodes ignored)
+// 2) if no JEG barcode is found, reads the printed JEG number (OCR) as a fallback
 var TESS='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
-var libP=null,liveP=null,photoP=null;
-function loadLib(){
-  if(!libP){libP=new Promise(function(res,rej){var s=document.createElement('script');s.src=TESS;s.onload=res;s.onerror=rej;document.head.appendChild(s)});libP.catch(function(){libP=null})}
-  return libP;
+var ZX='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
+var libP=null,ocrP=null,zxP=null,zxReader=null;
+function loadOcr(){
+  if(!ocrP){
+    libP=libP||loadScript(TESS);
+    ocrP=libP.then(function(){return Tesseract.createWorker('eng',1,{},{load_system_dawg:'0',load_freq_dawg:'0'})})
+      .then(function(w){return w.setParameters({tessedit_char_whitelist:'JEG0123456789',tessedit_pageseg_mode:'3'}).then(function(){return w})});
+    ocrP.catch(function(){ocrP=null;libP=null});
+  }
+  return ocrP;
 }
-function mkWorker(psm){
-  return loadLib().then(function(){return Tesseract.createWorker('eng',1,{},{load_system_dawg:'0',load_freq_dawg:'0'})})
-    .then(function(w){return w.setParameters({tessedit_char_whitelist:'JEG0123456789',tessedit_pageseg_mode:psm}).then(function(){return w})});
+function loadZx(){
+  if(!zxP){zxP=loadScript(ZX).then(function(){
+    var h=new Map();h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.CODE_39,ZXing.BarcodeFormat.QR_CODE]);
+    h.set(ZXing.DecodeHintType.TRY_HARDER,true);zxReader=new ZXing.MultiFormatReader();zxReader.setHints(h)});
+    zxP.catch(function(){zxP=null})}
+  return zxP;
 }
+function toCanvas(src,max){
+  var w=src.videoWidth||src.width,h=src.videoHeight||src.height,k=Math.min(max?max/Math.max(w,h):1,2.5),c=document.createElement('canvas');
+  c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(src,0,0,c.width,c.height);return c;
+}
+function zxDecode(c){try{var b=new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(c)));return [zxReader.decode(b).getText()]}catch(e){return []}}
+function jegs(list){var o=[];list.forEach(function(t){var c=clean(t);if(c&&o.indexOf(c)<0)o.push(c)});return o}
+function barcodeIds(src){
+  if(detector)return detector.detect(src).then(function(r){return jegs(r.map(function(x){return x.rawValue}))}).catch(function(){return []});
+  return loadZx().then(function(){
+    var c=toCanvas(src,1600),ids=jegs(zxDecode(c));if(ids.length)return ids;
+    // the label has several barcodes; retry on the top half, where the JEG barcode sits
+    var t=document.createElement('canvas');t.width=c.width;t.height=Math.round(c.height/2);t.getContext('2d').drawImage(c,0,0);
+    return jegs(zxDecode(t));
+  }).catch(function(){return []});
+}
+function ocrIds(canvas){
+  var g=canvas.getContext('2d');g.filter='grayscale(1)';g.drawImage(canvas,0,0);
+  return loadOcr().then(function(w){return w.recognize(canvas)}).then(function(r){return fromOcr(r.data.text)}).catch(function(){return []});
+}
+
+// live camera: reads the printed JEG number anywhere inside a large frame (2 readers in parallel)
+var ZONE={x:.05,w:.90,y:.22,h:.46};      // reading area shown on screen
+var liveP=null;
 function loadLive(){
-  if(!liveP){liveP=Promise.all([mkWorker('7'),mkWorker('7')]).then(function(ws){var s=Tesseract.createScheduler();ws.forEach(function(w){s.addWorker(w)});return s});liveP.catch(function(){liveP=null})}
+  if(!liveP){
+    libP=libP||loadScript(TESS);
+    var mk=function(){return libP.then(function(){return Tesseract.createWorker('eng',1,{},{load_system_dawg:'0',load_freq_dawg:'0'})})
+      .then(function(w){return w.setParameters({tessedit_char_whitelist:'JEG0123456789',tessedit_pageseg_mode:'6'}).then(function(){return w})})};
+    liveP=Promise.all([mk(),mk()]).then(function(ws){var s=Tesseract.createScheduler();ws.forEach(function(w){s.addWorker(w)});return s});
+    liveP.catch(function(){liveP=null;libP=null});
+  }
   return liveP;
 }
-function loadPhoto(){if(!photoP){photoP=mkWorker('3');photoP.catch(function(){photoP=null})}return photoP}
-function preloadPhone(){loadLive().then(function(){if(curTab==='phone'&&!$('#result').className)result('','القارئ جاهز. افتح الكاميرا')}).catch(function(){if(curTab==='phone')result('bad','القارئ محتاج نت أول مرة')})}
-
-var FRAME={x:.08,y:.45,w:.84,h:.10};
-var video=$('#video'),cam=$('#cam'),frameEl=$('#frame'),stream=null,prev='',same=0,cool={};
+function preloadPhone(){
+  Promise.all([loadLive(),loadOcr()])
+  .then(function(){if(curTab==='phone'&&!$('#result').className)result('','جاهز. افتح الكاميرا ووجّهها على الرقم')})
+  .catch(function(){if(curTab==='phone')result('bad','الأداة محتاجة نت أول مرة')});
+}
+function crop(r,targetW){
+  var vw=video.videoWidth,vh=video.videoHeight,sx=vw*r.x,sy=vh*r.y,sw=vw*r.w,sh=vh*r.h,k=targetW/sw,c=document.createElement('canvas');
+  c.width=Math.round(sw*k);c.height=Math.round(sh*k);c.getContext('2d').drawImage(video,sx,sy,sw,sh,0,0,c.width,c.height);return c;
+}
+// black & white (Otsu threshold) so the reader sees clean digits
+function binarize(c){
+  var g=c.getContext('2d'),d=g.getImageData(0,0,c.width,c.height),p=d.data,n=p.length/4,hist=new Array(256).fill(0),gray=new Uint8Array(n);
+  for(var i=0;i<n;i++){var v=(p[i*4]*.3+p[i*4+1]*.59+p[i*4+2]*.11)|0;gray[i]=v;hist[v]++}
+  var sum=0;for(i=0;i<256;i++)sum+=i*hist[i];
+  var sB=0,wB=0,best=0,th=128;
+  for(i=0;i<256;i++){wB+=hist[i];if(!wB)continue;var wF=n-wB;if(!wF)break;sB+=i*hist[i];var mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)*(mB-mF);if(b>best){best=b;th=i}}
+  for(i=0;i<n;i++){var o=gray[i]>th?255:0;p[i*4]=p[i*4+1]=p[i*4+2]=o}
+  g.putImageData(d,0,0);return c;
+}
+var video=$('#video'),cam=$('#cam'),frameEl=$('#frame'),stream=null,cool={},prev='',same=0,running=0;
 function setBtn(el,txt){el.querySelector('span').textContent=txt}
 function stopCam(){if(stream)stream.getTracks().forEach(function(t){t.stop()});stream=null;cam.hidden=true;setBtn($('#liveBtn'),'افتح الكاميرا')}
+function hit(){frameEl.classList.add('hit');setTimeout(function(){frameEl.classList.remove('hit')},450)}
+function accept(id,sure){
+  var known=paperIds().indexOf(id)>=0;
+  if(!sure&&!known){same=(id===prev)?same+1:1;prev=id;if(same<2)return}
+  if(cool[id]&&Date.now()-cool[id]<4000)return;
+  cool[id]=Date.now();add(id);hit();
+}
 $('#liveBtn').addEventListener('click',function(){
   if(stream){stopCam();return}
-  if(!window.isSecureContext||!navigator.mediaDevices){result('bad','الكاميرا المباشرة محتاجة الأداة تتفتح من لينك https. استخدم "صوّر صورة" دلوقتي');return}
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}})
+  if(!window.isSecureContext||!navigator.mediaDevices){result('bad','الكاميرا المباشرة محتاجة الأداة تتفتح من لينك https. استخدم "صوّر البوليصة" دلوقتي');return}
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080},focusMode:'continuous'}})
   .then(function(s){stream=s;video.srcObject=s;cam.hidden=false;setBtn($('#liveBtn'),'اقفل الكاميرا');return video.play()})
-  .then(function(){result('','بيجهز القارئ…');return loadLive()})
-  .then(function(){result('','خلي رقم JEG جوه المستطيل');loop(0);setTimeout(function(){loop(1)},120)})
-  .catch(function(err){stopCam();result('bad','الكاميرا ما اشتغلتش ('+String(err&&err.name||err).slice(0,50)+'). اسمح لـ Chrome بالكاميرا، أو استخدم "صوّر صورة"')});
+  .then(function(){result('','بيجهز…');return loadLive()})
+  .then(function(){result('','خلي رقم JEG جوه المستطيل');tick();setTimeout(tick,90)})
+  .catch(function(err){stopCam();result('bad','الكاميرا ما اشتغلتش ('+String(err&&err.name||err).slice(0,50)+'). اسمح لـ Chrome بالكاميرا، أو استخدم "صوّر البوليصة"')});
 });
-var grabs=[document.createElement('canvas'),document.createElement('canvas')];
-function loop(i){
+function tick(){
   if(!stream)return;
-  var vw=video.videoWidth,vh=video.videoHeight;
-  if(!vw){setTimeout(function(){loop(i)},100);return}
-  var sx=vw*FRAME.x,sy=vh*FRAME.y,sw=vw*FRAME.w,sh=vh*FRAME.h,k=Math.min(1,900/sw),c=grabs[i];
-  c.width=Math.round(sw*k);c.height=Math.round(sh*k);
-  var g=c.getContext('2d');g.filter='grayscale(1) contrast(1.5)';g.drawImage(video,sx,sy,sw,sh,0,0,c.width,c.height);
-  loadLive().then(function(s){return s.addJob('recognize',c)}).then(function(r){
-    var id=fromOcr(r.data.text)[0];if(!id)return;
-    var known=paperIds().indexOf(id)>=0;
-    same=(id===prev)?same+1:1;prev=id;
-    // numbers in the branch list are accepted at once; unknown numbers need 2 identical reads
-    if((known||same>=2)&&!(cool[id]&&Date.now()-cool[id]<4000)){
-      cool[id]=Date.now();add(id);frameEl.classList.add('hit');setTimeout(function(){frameEl.classList.remove('hit')},500);
-    }
-  }).catch(function(){}).then(function(){setTimeout(function(){loop(i)},30)});
+  if(!video.videoWidth){setTimeout(tick,100);return}
+  // printed number only (phone cameras misread barcodes, so they are not used here)
+  loadLive().then(function(s){return s.addJob('recognize',binarize(crop(ZONE,1100)))})
+    .then(function(r){var id=fromOcr(r.data.text)[0];if(id)accept(id,false)})
+    .catch(function(){}).then(function(){setTimeout(tick,20)});
 }
-function shrink(file){
-  return createImageBitmap(file).then(function(b){
-    var k=Math.min(2.5,2000/Math.max(b.width,b.height)),c=document.createElement('canvas');
-    c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);
-    var g=c.getContext('2d');g.filter='grayscale(1)';g.drawImage(b,0,0,c.width,c.height);return c;
-  });
-}
+
+// still photo of the whole label
+$('#photo').addEventListener('change',function(e){
+  var files=[].slice.call(e.target.files);e.target.value='';
+  handleFiles(files,function(f){
+    return createImageBitmap(f).then(function(bmp){return ocrIds(toCanvas(bmp,2000))});
+  },'بيقرا الرقم…','رقم JEG ما اتقراش. صوّر البوليصة واضحة ومنوّرة وجرب تاني');
+});
+
 function handleFiles(files,reader,busyMsg,failMsg){
   if(!files.length)return;result('',busyMsg);var found=0;
   files.reduce(function(p,f){return p.then(function(){return reader(f).then(function(ids){ids.forEach(function(t){found++;add(t)})}).catch(function(){})})},Promise.resolve())
   .then(function(){if(!found)result('bad',failMsg)});
 }
-$('#photo').addEventListener('change',function(e){
-  var files=[].slice.call(e.target.files);e.target.value='';
-  handleFiles(files,function(f){return Promise.all([loadPhoto(),shrink(f)]).then(function(r){return r[0].recognize(r[1])}).then(function(r){return fromOcr(r.data.text)})},
-    'بيقرا الرقم…','رقم JEG ما اتقراش. قرّب الموبايل من الرقم ونوّر كويس وصوّر تاني');
-});
 
 // ---- scanner lap: barcode / QR (gun, camera or photo) ----
 var H5='https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js',h5P=null,lapScanner=null,lapCool={};
@@ -437,7 +488,6 @@ gun.addEventListener('keydown',function(e){
   var v=gun.value;gun.value='';if(!v.trim())return;
   if(clean(v))add(v);else{result('bad','ده مش رقم JEG',v.trim());beep(200)}
 });
-var detector=null;if('BarcodeDetector' in window){try{detector=new BarcodeDetector()}catch(e){}}
 function barcodesFrom(file){
   var lib=function(){return loadH5().then(function(){
     var el=document.getElementById('h5file');if(!el){el=document.createElement('div');el.id='h5file';el.hidden=true;document.body.appendChild(el)}
