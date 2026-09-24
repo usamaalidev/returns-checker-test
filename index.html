@@ -3,116 +3,237 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3aa8">
 <title>مطابقة المرتجعات</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <style>
 :root{
-  --bg:#f1f3ef;--card:#fff;--ink:#1a1f28;--muted:#626a76;--line:#d9ddd5;
-  --blue:#2742b8;--green:#1c7c45;--green-bg:#dff2e6;--red:#b8322a;--red-bg:#fae3e0;--orange:#9a5f0c;--orange-bg:#f9ecd4;
+  --bg:#eef1f5;--card:#fff;--ink:#161b26;--muted:#5f6878;--line:#dde2ea;--soft:#f4f6f9;
+  --blue:#1f3aa8;--blue-soft:#e6ebfb;
+  --green:#157a41;--green-bg:#dcf3e5;--red:#b42a22;--red-bg:#fbe2df;--orange:#955a07;--orange-bg:#fbeccf;
+  --shadow:0 1px 2px rgba(22,27,38,.06),0 4px 14px rgba(22,27,38,.05);
   --sans:"IBM Plex Sans Arabic",system-ui,Tahoma,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root{
-  color-scheme:dark;--bg:#12151b;--card:#1c2029;--ink:#eceef2;--muted:#9ba3af;--line:#2e3440;
-  --blue:#8a9ef4;--green:#63d193;--green-bg:#15301f;--red:#f2877e;--red-bg:#3b1d1b;--orange:#e7b75f;--orange-bg:#372912;}}
+  color-scheme:dark;--bg:#0f1218;--card:#1a1e27;--ink:#eceff4;--muted:#9aa3b2;--line:#2b313d;--soft:#222733;
+  --blue:#8ea2f6;--blue-soft:#232b48;
+  --green:#5fd392;--green-bg:#133021;--red:#f3877e;--red-bg:#3a1c1a;--orange:#eab660;--orange-bg:#372812;
+  --shadow:none;}}
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;
-  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px calc(env(safe-area-inset-bottom,0px) + 50px)}
-.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
-h1{font-size:24px;margin:0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
-.step{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin:0}
-.step i{font-style:normal;width:30px;height:30px;border-radius:50%;background:var(--blue);color:var(--card);display:grid;place-items:center;font-family:var(--mono);font-size:16px;flex:none}
-textarea{width:100%;min-height:100px;font:14px var(--mono);direction:ltr;text-align:left;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;resize:vertical}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;
+  padding:0 0 calc(env(safe-area-inset-bottom,0px) + 96px)}
+[hidden]{display:none!important}
+button{font-family:inherit}
+button:focus-visible,label:focus-within,textarea:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;display:flex;flex-direction:column;gap:14px}
+
+/* top bar: progress always visible while scanning */
+.top{position:sticky;top:0;z-index:20;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px}
+.top-in{max-width:528px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.top h1{margin:0;font-size:19px;font-weight:700}
+.prog{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.prog-txt{font-size:15px;color:var(--muted)}
+.prog-txt b{font:700 22px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--green);border-radius:99px;transition:width .3s}
+.pills{display:flex;gap:6px}
+.pill{border:0;border-radius:99px;padding:3px 11px;font:600 13px var(--sans);cursor:pointer}
+.pill b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pill.r{background:var(--red-bg);color:var(--red)}.pill.o{background:var(--orange-bg);color:var(--orange)}.pill.g{background:var(--green-bg);color:var(--green)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.head h2{margin:0;font-size:17px;font-weight:700}
+.link{border:0;background:none;color:var(--blue);font:600 14px var(--sans);cursor:pointer;padding:4px}
 .note{margin:0;color:var(--muted);font-size:14px}
-.note b{color:var(--ink)}
-.big{width:100%;font:700 19px var(--sans);padding:18px;border-radius:12px;border:0;background:var(--blue);color:var(--card);cursor:pointer;display:block;text-align:center}
-.small{font:600 15px var(--sans);padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;text-align:center;flex:1}
-.row{display:flex;gap:8px}
-input[type=file]{display:none}
-button:focus-visible,label:focus-within,textarea:focus{outline:3px solid var(--blue);outline-offset:2px}
-#reader{width:100%;border-radius:10px;overflow:hidden}
-#reader video{border-radius:10px}
-#flash{border-radius:12px;padding:14px;text-align:center;font-weight:700;font-size:18px;background:var(--bg);color:var(--muted)}
-#flash.ok{background:var(--green-bg);color:var(--green)}
-#flash.warn{background:var(--orange-bg);color:var(--orange)}
-#flash.bad{background:var(--red-bg);color:var(--red)}
-#flash .n{display:block;font:500 15px var(--mono);direction:ltr}
-.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.box{border-radius:12px;padding:10px 6px;text-align:center}
-.box b{display:block;font:700 28px/1.2 var(--mono);font-variant-numeric:tabular-nums}
-.box span{font-size:13px;font-weight:600}
-.box.g{background:var(--green-bg);color:var(--green)}
-.box.r{background:var(--red-bg);color:var(--red)}
-.box.o{background:var(--orange-bg);color:var(--orange)}
-h3{margin:0 0 6px;font-size:16px}
-h3.r{color:var(--red)}h3.o{color:var(--orange)}h3.g{color:var(--green)}
+textarea{width:100%;font:14px/1.5 var(--mono);direction:ltr;text-align:left;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px;resize:vertical}
+#paper{min-height:120px}
+.paper-sum{display:flex;align-items:center;gap:10px;background:var(--blue-soft);border-radius:12px;padding:12px 14px}
+.paper-sum b{font:700 24px var(--mono);color:var(--blue)}
+.paper-sum span{flex:1;font-weight:600}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border-radius:12px;cursor:pointer;font:600 16px var(--sans);padding:14px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-size:18px;padding:16px}
+.btn.ghost{background:var(--soft);border-color:transparent}
+.btn svg{width:20px;height:20px;flex:none}
+.btn input{display:none}
+.row{display:flex;gap:8px}.row>*{flex:1}
+
+/* scanner tabs */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--soft);padding:4px;border-radius:14px}
+.seg button{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;border-radius:11px;background:transparent;color:var(--muted);padding:10px 6px;cursor:pointer}
+.seg button b{font-size:16px}
+.seg button small{font-size:12px}
+.seg button.on{background:var(--card);color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.pane{display:flex;flex-direction:column;gap:10px}
+#gun{width:100%;font:17px var(--mono);direction:ltr;text-align:center;padding:16px;border:2px dashed var(--blue);border-radius:12px;background:var(--blue-soft);color:var(--ink)}
+#gun::placeholder{font-family:var(--sans);direction:rtl;color:var(--blue)}
+#lapReader{width:100%;border-radius:12px;overflow:hidden}
+#lapReader:empty{display:none}
+#cam{position:relative;border-radius:12px;overflow:hidden;background:#000}
+#cam video{display:block;width:100%;height:auto}
+#frame{position:absolute;left:8%;width:84%;top:45%;height:10%;border:3px solid #fff;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);transition:border-color .2s}
+#frame.hit{border-color:#3ddc84}
+.camhint{position:absolute;top:10px;left:0;right:0;text-align:center;color:#fff;font-size:14px;margin:0}
+
+/* last scan result */
+#result{border-radius:14px;padding:14px;text-align:center;background:var(--soft);color:var(--muted);display:flex;flex-direction:column;gap:2px;min-height:78px;justify-content:center}
+#result .w{font:700 30px/1.1 var(--mono);letter-spacing:.04em}
+#result .t{font-weight:600}
+#result .n{font:500 15px var(--mono);direction:ltr}
+#result.ok{background:var(--green-bg);color:var(--green)}
+#result.warn{background:var(--orange-bg);color:var(--orange)}
+#result.bad{background:var(--red-bg);color:var(--red)}
+.recent{display:flex;flex-direction:column;gap:4px}
+.recent div{display:flex;align-items:center;gap:8px;font:500 14px var(--mono);direction:ltr;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.dot.ok{background:var(--green)}.dot.warn{background:var(--orange)}
+
+/* results */
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{flex:1;border:2px solid transparent;border-radius:12px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;font:600 13px var(--sans)}
+.filters button b{font:700 22px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.filters .r{background:var(--red-bg);color:var(--red)}.filters .o{background:var(--orange-bg);color:var(--orange)}.filters .g{background:var(--green-bg);color:var(--green)}
+.filters button.on{border-color:currentColor}
 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-li{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:9px;padding:8px 10px}
+li{display:flex;align-items:center;gap:8px;background:var(--soft);border-radius:10px;padding:9px 12px}
 .num{flex:1;font:500 15px var(--mono);direction:ltr;text-align:left;color:var(--muted);min-width:0;overflow-wrap:anywhere}
-.num b{color:var(--ink)}
+.num b{color:var(--ink);font-weight:700}
 li button{font:600 13px var(--sans);border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:8px;padding:5px 10px;cursor:pointer}
 li button.on{background:var(--red-bg);color:var(--red);border-color:var(--red)}
-.none{color:var(--muted);font-size:14px}
-details summary{cursor:pointer;font-weight:700;color:var(--green)}
-#confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font:600 12px var(--sans);background:var(--red-bg);color:var(--red);border-radius:99px;padding:1px 8px}
+.none{justify-content:center;color:var(--muted);font-size:14px}
+#report{min-height:200px;font-family:var(--sans);direction:rtl;text-align:right}
+
+/* bottom action bar */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 10px)}
+.dock-in{max-width:528px;margin:0 auto;display:flex;gap:8px}
+.dock .btn.primary{flex:3;padding:14px;font-size:17px}
+.dock .btn{flex:none;white-space:nowrap;padding:14px 12px;font-size:14px}
+
+/* confirm sheet + toast + full screen flash */
+.sheet-bg{position:fixed;inset:0;background:rgba(10,12,18,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:20px 16px calc(env(safe-area-inset-bottom,0px) + 16px);display:flex;flex-direction:column;gap:12px}
+.sheet h3{margin:0;font-size:18px}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+#toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-weight:600;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1}
+#splash{position:fixed;inset:0;z-index:50;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;font:700 22vw/1 var(--mono);color:#fff}
+#splash.ok{background:rgba(21,122,65,.85)}#splash.warn{background:rgba(214,125,0,.88)}
+#splash.go{animation:sp .55s ease-out}
+@keyframes sp{0%{opacity:1}60%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){#splash.go{animation:none}.bar i{transition:none}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>مطابقة المرتجعات</h1>
 
-  <div class="card">
-    <p class="step"><i>1</i>الصق رسالة الفرع</p>
-    <textarea id="paper" placeholder="الصق رسالة الواتساب هنا زي ما هي"></textarea>
-    <p class="note" id="paperInfo">لسه مفيش أرقام.</p>
-  </div>
-
-  <div class="card">
-    <p class="step"><i>2</i>اسكان البوالص اللي وصلت</p>
-    <button class="big" id="liveBtn" type="button">افتح الكاميرا</button>
-    <div id="reader"></div>
-    <div class="row">
-      <label class="small">صوّر صورة<input type="file" id="photo" accept="image/*" capture="environment" multiple></label>
-      <button class="small" id="typeBtn" type="button">اكتب رقم</button>
+<header class="top">
+  <div class="top-in">
+    <h1>مطابقة المرتجعات</h1>
+    <div class="prog">
+      <span class="prog-txt">وصل <b id="nOk">0</b> من <b id="nExp">0</b></span>
+      <div class="pills">
+        <button class="pill r" type="button" data-f="miss">ناقص <b id="pMiss">0</b></button>
+        <button class="pill o" type="button" data-f="extra">زيادة <b id="pExtra">0</b></button>
+      </div>
     </div>
+    <div class="bar"><i id="barFill"></i></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 1. branch list -->
+  <section class="card">
+    <div class="head"><h2>كشف الفرع</h2><button class="link" id="editPaper" type="button" hidden>تعديل</button></div>
+    <div id="paperEdit">
+      <div class="row" style="margin-bottom:8px">
+        <button class="btn ghost" id="pasteBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg>
+          الصق من الواتساب
+        </button>
+      </div>
+      <textarea id="paper" placeholder="أو الصق رسالة الفرع هنا زي ما هي، والأداة هتطلع أرقام JEG لوحدها"></textarea>
+      <p class="note" id="paperInfo" style="margin-top:6px">لسه مفيش أرقام.</p>
+      <button class="btn" id="donePaper" type="button" style="margin-top:8px" hidden>تمام، ابدأ الاسكان</button>
+    </div>
+    <div class="paper-sum" id="paperSum" hidden><b id="sumN">0</b><span>شحنة في الكشف</span></div>
+  </section>
+
+  <!-- 2. scanning -->
+  <section class="card" id="scanCard">
+    <div class="head"><h2>الاسكان</h2><button class="link" id="typeBtn" type="button">اكتب رقم</button></div>
+    <div class="seg" role="tablist">
+      <button type="button" role="tab" data-tab="lap"><b>سكانر لاب</b><small>باركود / QR</small></button>
+      <button type="button" role="tab" data-tab="phone"><b>سكانر فون</b><small>الرقم المكتوب</small></button>
+    </div>
+
+    <div id="paneLap" class="pane" hidden>
+      <input type="text" id="gun" autocomplete="off" placeholder="دوس هنا واعمل اسكان بالمسدس">
+      <div class="row">
+        <button class="btn primary" id="lapLive" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M14 8v8M17 8v8"/></svg>
+          <span>افتح الكاميرا</span>
+        </button>
+      </div>
+      <div id="lapReader"></div>
+      <label class="btn ghost">صوّر صورة للباركود<input type="file" id="lapPhoto" accept="image/*" capture="environment" multiple></label>
+    </div>
+
+    <div id="panePhone" class="pane" hidden>
+      <button class="btn primary" id="liveBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>افتح الكاميرا</span>
+      </button>
+      <div id="cam" hidden><video id="video" playsinline muted></video><div id="frame"></div><p class="camhint">خلي رقم JEG جوه المستطيل</p></div>
+      <label class="btn ghost">صوّر صورة للرقم<input type="file" id="photo" accept="image/*" capture="environment" multiple></label>
+    </div>
+
     <div class="row" id="typeRow" hidden>
-      <textarea id="typed" style="min-height:44px" placeholder="JEG000..."></textarea>
-      <button class="small" id="addBtn" type="button" style="flex:none">إضافة</button>
+      <textarea id="typed" style="min-height:48px;flex:3" placeholder="JEG000..."></textarea>
+      <button class="btn" id="addBtn" type="button" style="flex:1">إضافة</button>
     </div>
-    <div id="flash">وجّه الكاميرا على باركود البوليصة</div>
-  </div>
 
-  <div class="card">
-    <p class="step"><i>3</i>النتيجة</p>
-    <div class="sum">
-      <div class="box g"><b id="nOk">0</b><span>وصل من <em id="nExp" style="font-style:normal">0</em></span></div>
-      <div class="box r"><b id="nMiss">0</b><span>ناقص</span></div>
-      <div class="box o"><b id="nExtra">0</b><span>زيادة</span></div>
-    </div>
-    <div><h3 class="r">ناقص: في الكشف ولسه ما وصلش</h3><ul id="lMiss"></ul></div>
-    <div><h3 class="o">زيادة: وصل ومش مكتوب في الكشف</h3><ul id="lExtra"></ul></div>
-    <details><summary>المطابق (<span id="nOk2">0</span>)</summary><ul id="lOk" style="margin-top:8px"></ul></details>
-  </div>
+    <div id="result"><span class="t">اختار طريقة الاسكان</span></div>
+    <div class="recent" id="recent"></div>
+  </section>
 
-  <div class="card">
-    <p class="step"><i>4</i>ابعت التقرير للفرع</p>
-    <button class="big" id="copyBtn" type="button">انسخ التقرير</button>
-    <textarea id="report" readonly hidden style="font-family:var(--sans);direction:rtl;text-align:right;min-height:180px"></textarea>
-    <button class="small" id="resetBtn" type="button" style="color:var(--red)">امسح وابدأ مطابقة جديدة</button>
-    <div id="confirm" hidden>
-      <span>هيتمسح كل حاجة. متأكد؟</span>
-      <button class="small" id="yes" type="button" style="color:var(--red);flex:none">أيوه امسح</button>
-      <button class="small" id="no" type="button" style="flex:none">لا</button>
+  <!-- 3. results -->
+  <section class="card" id="results">
+    <div class="head"><h2>النتيجة</h2></div>
+    <div class="filters">
+      <button class="r" type="button" data-f="miss"><b id="fMiss">0</b>ناقص</button>
+      <button class="o" type="button" data-f="extra"><b id="fExtra">0</b>زيادة</button>
+      <button class="g" type="button" data-f="ok"><b id="fOk">0</b>مطابق</button>
     </div>
+    <p class="note" id="fNote"></p>
+    <ul id="list"></ul>
+    <textarea id="report" readonly hidden></textarea>
+  </section>
+</main>
+
+<div class="dock">
+  <div class="dock-in">
+    <button class="btn primary" id="copyBtn" type="button">انسخ التقرير للفرع</button>
+    <button class="btn" id="resetBtn" type="button">مطابقة جديدة</button>
   </div>
-  <div id="fileReader" hidden></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<div class="sheet-bg" id="confirm" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cTitle">
+    <h3 id="cTitle">تبدأ مطابقة جديدة؟</h3>
+    <p class="note">هيتمسح الكشف وكل الشحنات اللي اتعملها اسكان. انسخ التقرير الأول لو محتاجه.</p>
+    <button class="btn danger" id="yes" type="button">أيوه، امسح وابدأ من جديد</button>
+    <button class="btn" id="no" type="button">لا، رجوع</button>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+<div id="splash"></div>
+
 <script>
 (function(){
-var $=function(s){return document.querySelector(s)};
+var $=function(s){return document.querySelector(s)},$$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var KEY='returns-match-v2';
 var state={paper:'',scanned:[]};
 try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.scanned))state=s}catch(e){}
@@ -122,103 +243,235 @@ function paperIds(){
   var m=(state.paper||'').toUpperCase().match(/JEG\s*\d{9,15}/g)||[];
   var out=[];m.forEach(function(x){x=x.replace(/\s/g,'');if(out.indexOf(x)<0)out.push(x)});return out;
 }
+// only accept J&T waybill numbers (JEG + 12 digits)
 function clean(raw){
-  var t=String(raw||'').toUpperCase().trim();
-  var m=t.match(/JEG\s*\d{9,15}/);if(m)return m[0].replace(/\s/g,'');
-  t=t.replace(/\s/g,'');
+  var t=String(raw||'').toUpperCase().replace(/\s/g,'');
+  var m=t.match(/JEG(\d{12})/);if(m)return 'JEG'+m[1];
   if(/^\d{12}$/.test(t))return 'JEG'+t;
-  return t.length>=6?t:null;
+  return null;
+}
+// printed-number reading: match against the branch list, tolerate dropped zeros and one wrong digit
+function fromOcr(text){
+  var lines=String(text||'').toUpperCase().split(/\n/).map(function(l){return l.replace(/\s/g,'')});
+  var out=[],list=paperIds();
+  list.forEach(function(id){var tail=id.slice(-9);if(lines.some(function(l){return l.replace(/\D/g,'').indexOf(tail)>=0}))out.push(id)});
+  if(out.length)return out;
+  lines.forEach(function(l){
+    var m=l.match(/E[G6C]([0-9O]{9,12})/);if(!m)return;
+    var d=('000000000000'+m[1].replace(/O/g,'0')).slice(-12);
+    var near=list.filter(function(id){var x=id.slice(3),n=0;for(var i=0;i<12;i++)if(x[i]!==d[i])n++;return n<=1});
+    var id=near.length===1?near[0]:'JEG'+d;
+    if(out.indexOf(id)<0)out.push(id);
+  });
+  return out;
 }
 function show(id){return id.length>8?id.slice(0,-6)+'<b>'+id.slice(-6)+'</b>':'<b>'+id+'</b>'}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 
+// feedback: voice, vibration, colored splash
 var ac;
 function beep(f){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=.2;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.15)}catch(e){}}
-function say(word,f){
-  try{
-    if(!window.speechSynthesis)return beep(f);
-    speechSynthesis.cancel();
-    var u=new SpeechSynthesisUtterance(word);u.lang='en-US';u.rate=1.1;u.volume=1;
-    speechSynthesis.speak(u);
-  }catch(e){beep(f)}
-}
+function say(word,f){try{if(!window.speechSynthesis)return beep(f);speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(word);u.lang='en-US';u.rate=1.1;speechSynthesis.speak(u)}catch(e){beep(f)}}
 function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
-function flash(cls,msg,id){var f=$('#flash');f.className=cls;f.innerHTML=esc(msg)+(id?'<span class="n">'+esc(id)+'</span>':'')}
+function splash(cls,word){var s=$('#splash');s.className=cls;s.textContent=word;void s.offsetWidth;s.classList.add('go')}
+function result(cls,title,id,word){
+  var r=$('#result');r.className=cls;
+  r.innerHTML=(word?'<span class="w">'+word+'</span>':'')+'<span class="t">'+esc(title)+'</span>'+(id?'<span class="n">'+esc(id)+'</span>':'');
+}
+var toastT;
+function toast(msg){var t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show')},2200)}
 
 function add(raw){
   var id=clean(raw);if(!id)return;
-  if(state.scanned.some(function(x){return x.id===id})){flash('','متسجلة قبل كده',id);return}
-  state.scanned.push({id:id,bad:false});save();
-  if(paperIds().indexOf(id)>=0){flash('ok','YES – مطابقة',id);say('Yes',900);vib(80)}
-  else{flash('warn','NO – مش موجودة في الكشف',id);say('No',300);vib([100,80,100])}
+  if(state.scanned.some(function(x){return x.id===id})){result('','متسجلة قبل كده',id);beep(500);return}
+  state.scanned.push({id:id,bad:false,t:Date.now()});save();
+  if(paperIds().indexOf(id)>=0){result('ok','مطابقة للكشف',id,'YES');splash('ok','YES');say('Yes',900);vib(80)}
+  else{result('warn','مش موجودة في الكشف',id,'NO');splash('warn','NO');say('No',300);vib([100,80,100])}
   render();
 }
 
+// ---- render ----
+var filter='miss',paperOpen=null;
 function render(){
   var exp=paperIds(),have={};state.scanned.forEach(function(x){have[x.id]=x});
   var ok=exp.filter(function(i){return have[i]}),miss=exp.filter(function(i){return !have[i]});
   var extra=state.scanned.filter(function(x){return exp.indexOf(x.id)<0}).map(function(x){return x.id});
-  $('#paperInfo').innerHTML=exp.length?'تم قراءة <b>'+exp.length+'</b> شحنة من الرسالة':'لسه مفيش أرقام.';
-  $('#nExp').textContent=exp.length;$('#nOk').textContent=ok.length;$('#nOk2').textContent=ok.length;
-  $('#nMiss').textContent=miss.length;$('#nExtra').textContent=extra.length;
-  function li(id,btns){
+  $('#nOk').textContent=ok.length;$('#nExp').textContent=exp.length;
+  $('#pMiss').textContent=miss.length;$('#pExtra').textContent=extra.length;
+  $('#fMiss').textContent=miss.length;$('#fExtra').textContent=extra.length;$('#fOk').textContent=ok.length;
+  $('#barFill').style.width=(exp.length?Math.round(ok.length/exp.length*100):0)+'%';
+  // branch list box: collapsed once numbers are in
+  var open=paperOpen===null?!exp.length:paperOpen;
+  $('#paperEdit').hidden=!open;$('#paperSum').hidden=open||!exp.length;$('#editPaper').hidden=open||!exp.length;
+  $('#donePaper').hidden=!exp.length;$('#sumN').textContent=exp.length;
+  $('#paperInfo').innerHTML=exp.length?'اتقرى <b>'+exp.length+'</b> رقم من الرسالة':'لسه مفيش أرقام.';
+  // results list
+  $$('.filters button').forEach(function(b){b.classList.toggle('on',b.dataset.f===filter)});
+  var ids=filter==='miss'?miss:filter==='extra'?extra:ok;
+  $('#fNote').textContent=filter==='miss'?'مكتوبة في الكشف ولسه ما وصلتش':filter==='extra'?'وصلت ومش مكتوبة في الكشف':'مكتوبة في الكشف ووصلت';
+  $('#list').innerHTML=ids.map(function(id){
     var x=have[id];
-    return '<li><span class="num">'+show(esc(id))+'</span>'+(btns?
-      '<button type="button" data-a="bad" data-id="'+esc(id)+'" class="'+(x.bad?'on':'')+'">'+(x.bad?'تالفة':'تالفة؟')+'</button>'+
+    return '<li><span class="num">'+show(esc(id))+'</span>'+(x&&x.bad?'<span class="tag">تالفة</span>':'')+(x?
+      '<button type="button" data-a="bad" data-id="'+esc(id)+'" class="'+(x.bad?'on':'')+'">'+(x.bad?'مش تالفة':'تالفة؟')+'</button>'+
       '<button type="button" data-a="del" data-id="'+esc(id)+'">شيل</button>':'')+'</li>';
-  }
-  $('#lMiss').innerHTML=miss.map(function(i){return li(i,false)}).join('')||'<li class="none">مفيش</li>';
-  $('#lExtra').innerHTML=extra.map(function(i){return li(i,true)}).join('')||'<li class="none">مفيش</li>';
-  $('#lOk').innerHTML=ok.map(function(i){return li(i,true)}).join('')||'<li class="none">مفيش</li>';
+  }).join('')||'<li class="none">'+(filter==='miss'&&exp.length?'كل الشحنات وصلت':'مفيش')+'</li>';
+  // last 4 scans
+  $('#recent').innerHTML=state.scanned.slice(-4).reverse().map(function(x){
+    return '<div><i class="dot '+(exp.indexOf(x.id)>=0?'ok':'warn')+'"></i>'+esc(x.id)+'</div>';
+  }).join('');
   return {exp:exp,ok:ok,miss:miss,extra:extra};
 }
-
 document.addEventListener('click',function(e){
-  var b=e.target.closest('li button');if(!b)return;var id=b.dataset.id;
-  if(b.dataset.a==='del')state.scanned=state.scanned.filter(function(x){return x.id!==id});
-  else state.scanned.forEach(function(x){if(x.id===id)x.bad=!x.bad});
-  save();render();
+  var b=e.target.closest('li button');
+  if(b){var id=b.dataset.id;
+    if(b.dataset.a==='del')state.scanned=state.scanned.filter(function(x){return x.id!==id});
+    else state.scanned.forEach(function(x){if(x.id===id)x.bad=!x.bad});
+    save();render();return}
+  var f=e.target.closest('[data-f]');
+  if(f){filter=f.dataset.f;render();if(f.classList.contains('pill'))$('#results').scrollIntoView({behavior:'smooth'})}
 });
 
+// ---- branch list ----
 var paper=$('#paper');paper.value=state.paper;
-paper.addEventListener('input',function(){state.paper=paper.value;save();render()});
-
-// live camera
-var scanner=null,last={};
-$('#liveBtn').addEventListener('click',function(){
-  var btn=this;
-  if(scanner){scanner.stop().catch(function(){});scanner.clear();scanner=null;btn.textContent='افتح الكاميرا';return}
-  if(!window.Html5Qrcode){flash('bad','الأداة محتاجة إنترنت أول مرة عشان الكاميرا تشتغل');return}
-  scanner=new Html5Qrcode('reader',{experimentalFeatures:{useBarCodeDetectorIfSupported:true}});
-  scanner.start({facingMode:'environment'},{fps:10,qrbox:function(w,h){return {width:Math.floor(w*.85),height:Math.floor(Math.min(h*.5,w*.5))}}},
-    function(text){var now=Date.now();if(last[text]&&now-last[text]<3000)return;last[text]=now;add(text)},function(){})
-  .then(function(){btn.textContent='اقفل الكاميرا';flash('','وجّه الكاميرا على باركود البوليصة')})
-  .catch(function(){scanner=null;flash('bad','الكاميرا ما اشتغلتش. اسمح للمتصفح بالكاميرا، أو استخدم "صوّر صورة"')});
+paper.addEventListener('input',function(){state.paper=paper.value;paperOpen=true;save();render()});
+$('#pasteBtn').addEventListener('click',function(){
+  if(navigator.clipboard&&navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(t){if(!t){paper.focus();return}paper.value=t;state.paper=t;save();paperOpen=paperIds().length?false:true;render();
+      var n=paperIds().length;toast(n?'اتقرى '+n+' رقم':'مفيش أرقام JEG في النص ده')},function(){paper.focus();toast('الصق بإيدك في الخانة')});
+  }else{paper.focus();toast('الصق بإيدك في الخانة')}
 });
+$('#donePaper').addEventListener('click',function(){paperOpen=false;render();$('#scanCard').scrollIntoView({behavior:'smooth'})});
+$('#editPaper').addEventListener('click',function(){paperOpen=true;render();paper.focus()});
 
-// photos
-var detector=null;if('BarcodeDetector' in window){try{detector=new BarcodeDetector()}catch(e){}}
-function readPhoto(file){
-  var tryLib=function(){
-    if(!window.Html5Qrcode)return Promise.resolve([]);
-    return new Html5Qrcode('fileReader').scanFile(file,false).then(function(t){return [t]}).catch(function(){return []});
-  };
-  if(!detector)return tryLib();
-  return createImageBitmap(file).then(function(b){return detector.detect(b)})
-    .then(function(r){return r.length?r.map(function(x){return x.rawValue}):tryLib()}).catch(tryLib);
+// ---- scanner phone: reads the printed JEG number (OCR) ----
+var TESS='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+var libP=null,liveP=null,photoP=null;
+function loadLib(){
+  if(!libP){libP=new Promise(function(res,rej){var s=document.createElement('script');s.src=TESS;s.onload=res;s.onerror=rej;document.head.appendChild(s)});libP.catch(function(){libP=null})}
+  return libP;
+}
+function mkWorker(psm){
+  return loadLib().then(function(){return Tesseract.createWorker('eng',1,{},{load_system_dawg:'0',load_freq_dawg:'0'})})
+    .then(function(w){return w.setParameters({tessedit_char_whitelist:'JEG0123456789',tessedit_pageseg_mode:psm}).then(function(){return w})});
+}
+function loadLive(){
+  if(!liveP){liveP=Promise.all([mkWorker('7'),mkWorker('7')]).then(function(ws){var s=Tesseract.createScheduler();ws.forEach(function(w){s.addWorker(w)});return s});liveP.catch(function(){liveP=null})}
+  return liveP;
+}
+function loadPhoto(){if(!photoP){photoP=mkWorker('3');photoP.catch(function(){photoP=null})}return photoP}
+function preloadPhone(){loadLive().then(function(){if(curTab==='phone'&&!$('#result').className)result('','القارئ جاهز. افتح الكاميرا')}).catch(function(){if(curTab==='phone')result('bad','القارئ محتاج نت أول مرة')})}
+
+var FRAME={x:.08,y:.45,w:.84,h:.10};
+var video=$('#video'),cam=$('#cam'),frameEl=$('#frame'),stream=null,prev='',same=0,cool={};
+function setBtn(el,txt){el.querySelector('span').textContent=txt}
+function stopCam(){if(stream)stream.getTracks().forEach(function(t){t.stop()});stream=null;cam.hidden=true;setBtn($('#liveBtn'),'افتح الكاميرا')}
+$('#liveBtn').addEventListener('click',function(){
+  if(stream){stopCam();return}
+  if(!window.isSecureContext||!navigator.mediaDevices){result('bad','الكاميرا المباشرة محتاجة الأداة تتفتح من لينك https. استخدم "صوّر صورة" دلوقتي');return}
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}})
+  .then(function(s){stream=s;video.srcObject=s;cam.hidden=false;setBtn($('#liveBtn'),'اقفل الكاميرا');return video.play()})
+  .then(function(){result('','بيجهز القارئ…');return loadLive()})
+  .then(function(){result('','خلي رقم JEG جوه المستطيل');loop(0);setTimeout(function(){loop(1)},120)})
+  .catch(function(err){stopCam();result('bad','الكاميرا ما اشتغلتش ('+String(err&&err.name||err).slice(0,50)+'). اسمح لـ Chrome بالكاميرا، أو استخدم "صوّر صورة"')});
+});
+var grabs=[document.createElement('canvas'),document.createElement('canvas')];
+function loop(i){
+  if(!stream)return;
+  var vw=video.videoWidth,vh=video.videoHeight;
+  if(!vw){setTimeout(function(){loop(i)},100);return}
+  var sx=vw*FRAME.x,sy=vh*FRAME.y,sw=vw*FRAME.w,sh=vh*FRAME.h,k=Math.min(1,900/sw),c=grabs[i];
+  c.width=Math.round(sw*k);c.height=Math.round(sh*k);
+  var g=c.getContext('2d');g.filter='grayscale(1) contrast(1.5)';g.drawImage(video,sx,sy,sw,sh,0,0,c.width,c.height);
+  loadLive().then(function(s){return s.addJob('recognize',c)}).then(function(r){
+    var id=fromOcr(r.data.text)[0];if(!id)return;
+    var known=paperIds().indexOf(id)>=0;
+    same=(id===prev)?same+1:1;prev=id;
+    // numbers in the branch list are accepted at once; unknown numbers need 2 identical reads
+    if((known||same>=2)&&!(cool[id]&&Date.now()-cool[id]<4000)){
+      cool[id]=Date.now();add(id);frameEl.classList.add('hit');setTimeout(function(){frameEl.classList.remove('hit')},500);
+    }
+  }).catch(function(){}).then(function(){setTimeout(function(){loop(i)},30)});
+}
+function shrink(file){
+  return createImageBitmap(file).then(function(b){
+    var k=Math.min(2.5,2000/Math.max(b.width,b.height)),c=document.createElement('canvas');
+    c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);
+    var g=c.getContext('2d');g.filter='grayscale(1)';g.drawImage(b,0,0,c.width,c.height);return c;
+  });
+}
+function handleFiles(files,reader,busyMsg,failMsg){
+  if(!files.length)return;result('',busyMsg);var found=0;
+  files.reduce(function(p,f){return p.then(function(){return reader(f).then(function(ids){ids.forEach(function(t){found++;add(t)})}).catch(function(){})})},Promise.resolve())
+  .then(function(){if(!found)result('bad',failMsg)});
 }
 $('#photo').addEventListener('change',function(e){
-  var files=[].slice.call(e.target.files);e.target.value='';if(!files.length)return;
-  flash('','بيقرا الصورة…');var found=0;
-  files.reduce(function(p,f){return p.then(function(){return readPhoto(f).then(function(c){c.forEach(function(t){found++;add(t)})})})},Promise.resolve())
-  .then(function(){if(!found)flash('bad','الباركود ما اتقراش. قرّب الموبايل وصوّر تاني')});
+  var files=[].slice.call(e.target.files);e.target.value='';
+  handleFiles(files,function(f){return Promise.all([loadPhoto(),shrink(f)]).then(function(r){return r[0].recognize(r[1])}).then(function(r){return fromOcr(r.data.text)})},
+    'بيقرا الرقم…','رقم JEG ما اتقراش. قرّب الموبايل من الرقم ونوّر كويس وصوّر تاني');
 });
 
-// typing
-$('#typeBtn').addEventListener('click',function(){$('#typeRow').hidden=!$('#typeRow').hidden;if(!$('#typeRow').hidden)$('#typed').focus()});
-$('#addBtn').addEventListener('click',function(){var t=$('#typed');var m=t.value.toUpperCase().match(/JEG\s*\d{9,15}/g);(m||[t.value]).forEach(add);t.value=''});
+// ---- scanner lap: barcode / QR (gun, camera or photo) ----
+var H5='https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js',h5P=null,lapScanner=null,lapCool={};
+function loadH5(){
+  if(window.Html5Qrcode)return Promise.resolve();
+  if(!h5P){h5P=new Promise(function(res,rej){var s=document.createElement('script');s.src=H5;s.onload=res;s.onerror=rej;document.head.appendChild(s)});h5P.catch(function(){h5P=null})}
+  return h5P;
+}
+function stopLap(){
+  if(!lapScanner)return;var sc=lapScanner;lapScanner=null;
+  sc.stop().catch(function(){}).then(function(){try{sc.clear()}catch(e){}});setBtn($('#lapLive'),'افتح الكاميرا');
+}
+$('#lapLive').addEventListener('click',function(){
+  if(lapScanner){stopLap();return}
+  result('','بيفتح الكاميرا…');
+  loadH5().then(function(){
+    lapScanner=new Html5Qrcode('lapReader',{experimentalFeatures:{useBarCodeDetectorIfSupported:true}});
+    return lapScanner.start({facingMode:'environment'},{fps:10,qrbox:function(w,h){return {width:Math.floor(w*.85),height:Math.floor(Math.min(h*.6,w*.5))}}},
+      function(text){var id=clean(text);if(!id)return;var now=Date.now();if(lapCool[id]&&now-lapCool[id]<3000)return;lapCool[id]=now;add(id)},function(){});
+  }).then(function(){setBtn($('#lapLive'),'اقفل الكاميرا');result('','وجّه الكاميرا على باركود البوليصة')})
+  .catch(function(err){lapScanner=null;$('#lapReader').innerHTML='';result('bad','الكاميرا ما اشتغلتش ('+String(err&&err.name||err).slice(0,50)+'). استخدم المسدس أو "صوّر صورة"')});
+});
+var gun=$('#gun');
+gun.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!=='Tab')return;e.preventDefault();
+  var v=gun.value;gun.value='';if(!v.trim())return;
+  if(clean(v))add(v);else{result('bad','ده مش رقم JEG',v.trim());beep(200)}
+});
+var detector=null;if('BarcodeDetector' in window){try{detector=new BarcodeDetector()}catch(e){}}
+function barcodesFrom(file){
+  var lib=function(){return loadH5().then(function(){
+    var el=document.getElementById('h5file');if(!el){el=document.createElement('div');el.id='h5file';el.hidden=true;document.body.appendChild(el)}
+    return new Html5Qrcode('h5file').scanFile(file,false)}).then(function(t){return clean(t)?[clean(t)]:[]}).catch(function(){return []})};
+  if(!detector)return lib();
+  return createImageBitmap(file).then(function(b){return detector.detect(b)}).then(function(r){
+    var o=[];r.forEach(function(x){var c=clean(x.rawValue);if(c&&o.indexOf(c)<0)o.push(c)});return o.length?o:lib()}).catch(lib);
+}
+$('#lapPhoto').addEventListener('change',function(e){
+  var files=[].slice.call(e.target.files);e.target.value='';
+  handleFiles(files,barcodesFrom,'بيقرا الباركود…','باركود JEG ما اتقراش. قرّب وصوّر تاني');
+});
 
-// report
+// ---- tabs ----
+var curTab='lap';
+function setTab(t){
+  curTab=t;stopLap();stopCam();
+  $$('.seg button').forEach(function(b){var on=b.dataset.tab===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
+  $('#paneLap').hidden=t!=='lap';$('#panePhone').hidden=t!=='phone';
+  try{localStorage.setItem(KEY+'-tab',t)}catch(e){}
+  if(t==='phone'){result('','بيجهز قارئ الأرقام…');preloadPhone()}
+  else{result('','اعمل اسكان بالمسدس أو افتح الكاميرا');if(matchMedia('(pointer:fine)').matches)gun.focus()}
+}
+$$('.seg button').forEach(function(b){b.addEventListener('click',function(){setTab(b.dataset.tab)})});
+
+// ---- manual entry ----
+$('#typeBtn').addEventListener('click',function(){var r=$('#typeRow');r.hidden=!r.hidden;if(!r.hidden)$('#typed').focus()});
+$('#addBtn').addEventListener('click',function(){
+  var t=$('#typed'),m=t.value.toUpperCase().match(/JEG\s*\d{9,15}/g)||[t.value];
+  var anyOk=m.some(function(x){return clean(x)});m.forEach(add);
+  if(!anyOk&&t.value.trim())result('bad','اكتب الرقم كامل: JEG وبعده 12 رقم');else t.value='';
+});
+
+// ---- report ----
 $('#copyBtn').addEventListener('click',function(){
   var r=render(),bad=state.scanned.filter(function(x){return x.bad}).map(function(x){return x.id});
   var d=new Date().toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});
@@ -227,19 +480,23 @@ $('#copyBtn').addEventListener('click',function(){
   if(r.extra.length)t+='\nوصل وغير مكتوب في الكشف: '+r.extra.length+'\n'+r.extra.map(function(i){return '- '+i}).join('\n')+'\n';
   if(bad.length)t+='\nوصل تالف أو مفتوح: '+bad.length+'\n'+bad.map(function(i){return '- '+i}).join('\n')+'\n';
   if(r.miss.length)t+='\nالشحنات الناقصة لم يتم استلامها.';
-  var ta=$('#report'),btn=this;ta.value=t;ta.hidden=false;
-  var manual=function(){ta.focus();ta.select();btn.textContent='حدد النص وانسخه'};
+  var ta=$('#report');ta.value=t;
+  var manual=function(){ta.hidden=false;ta.scrollIntoView({behavior:'smooth'});ta.focus();ta.select();toast('حدد النص وانسخه')};
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(t).then(function(){btn.textContent='اتنسخ ✓ الصقه في الواتساب';setTimeout(function(){btn.textContent='انسخ التقرير'},2500)},manual);
+    navigator.clipboard.writeText(t).then(function(){ta.hidden=true;toast('اتنسخ ✓ الصقه في الواتساب')},manual);
   }else manual();
 });
-$('#resetBtn').addEventListener('click',function(){$('#confirm').hidden=false});
+$('#resetBtn').addEventListener('click',function(){$('#confirm').hidden=false;$('#no').focus()});
 $('#no').addEventListener('click',function(){$('#confirm').hidden=true});
+$('#confirm').addEventListener('click',function(e){if(e.target===this)this.hidden=true});
 $('#yes').addEventListener('click',function(){
   state={paper:'',scanned:[]};paper.value='';$('#report').hidden=true;$('#confirm').hidden=true;
-  flash('','وجّه الكاميرا على باركود البوليصة');save();render();
+  paperOpen=null;filter='miss';save();render();setTab(curTab);toast('بدأت مطابقة جديدة');window.scrollTo({top:0});
 });
+
+var savedTab='lap';try{savedTab=localStorage.getItem(KEY+'-tab')||'lap'}catch(e){}
 render();
+setTab(savedTab==='phone'?'phone':'lap');
 })();
 </script>
 </body>
